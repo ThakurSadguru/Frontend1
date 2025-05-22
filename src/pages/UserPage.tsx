@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Edit, Shield } from 'lucide-react';
+import { Edit, Shield, UserIcon, Trash2 } from 'lucide-react';
 import { type User } from '../types/auth';
 import { useAuth } from '../contexts/AuthContext';
 import { userService } from '../services/userService';
 import type { RoleOption } from '../types/user';
 import { useNavigate } from 'react-router-dom';
-
-
+import { ModalLayout } from '../modal/ModalLayout';
+import UpdateUserForm from '../components/UpdateUserForm';
+import DeleteUserConfirmation from '../components/DeleteUserConfirmation';
 
 
 export default function UserPage() {
@@ -19,12 +20,16 @@ export default function UserPage() {
   const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+
   const [filters, setFilters] = useState({
     firstName: "",
     lastName: "",
     email: "",
     role: "",
   });
+  
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'ADMIN';
   const navigate = useNavigate();
@@ -77,6 +82,36 @@ useEffect(()=>{
       setSelectedUser(user);
       setIsEditModalOpen(true);
     }
+  };
+  
+  const handleUpdateSuccess = () => {
+    // Refresh the users list to show updated data
+    fetchUsers();
+    
+    // Close modal after successful update with a short delay
+    setTimeout(() => {
+      setIsEditModalOpen(false);
+    }, 1500);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    console.log(`Preparing to delete user: ${userId}`);
+    const user = users.find(u => u._id === userId);
+    if (user) {
+      setSelectedUser(user);
+      setIsDeleteModalOpen(true);
+    }
+  };
+  
+  const handleDeleteSuccess = () => {
+    // Refresh the users list to show updated data
+    fetchUsers();
+    
+    // Close modal immediately after successful deletion
+    setIsDeleteModalOpen(false);
+    
+    // Show a temporary success message (you could add state for this if desired)
+    console.log('User deleted successfully');
   };
 
  
@@ -305,19 +340,30 @@ useEffect(()=>{
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {isAdmin ? (
-                            <button
-                              onClick={() => handleEditUser(u._id)}
-                              className="text-blue-600 hover:text-blue-900 inline-flex items-center"
-                              title="Edit user"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                          ) : (
-                            <span className="text-gray-400 cursor-not-allowed" title="Admin access required">
-                              <Edit className="h-4 w-4" />
-                            </span>
-                          )}
+                          <div className="flex justify-end space-x-2">
+                            {isAdmin ? (
+                              <>
+                                <button
+                                  onClick={() => handleEditUser(u._id)}
+                                  className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                                  title="Edit user"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUser(u._id)}
+                                  className="text-red-600 hover:text-red-900 inline-flex items-center"
+                                  title="Delete user"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-gray-400 cursor-not-allowed" title="Admin access required">
+                                <Edit className="h-4 w-4" />
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -364,7 +410,39 @@ useEffect(()=>{
         </div>
       )}
 
-   
+      {/* Edit User Modal */}
+      <ModalLayout 
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit User"
+        icon={<UserIcon className="h-5 w-5 text-blue-600" />}
+      >
+        {selectedUser && (
+          <UpdateUserForm 
+            user={selectedUser}
+            roleOptions={roleOptions}
+            onSuccess={handleUpdateSuccess}
+            onCancel={() => setIsEditModalOpen(false)}
+          />
+        )}
+      </ModalLayout>
+
+      {/* Delete User Modal */}
+      <ModalLayout 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Delete User"
+        icon={<Trash2 className="h-5 w-5 text-red-600" />}
+        maxWidth="max-w-lg"
+      >
+        {selectedUser && (
+          <DeleteUserConfirmation 
+            user={selectedUser}
+            onSuccess={handleDeleteSuccess}
+            onCancel={() => setIsDeleteModalOpen(false)}
+          />
+        )}
+      </ModalLayout>
     </div>
   );
 }
