@@ -15,8 +15,7 @@ export interface LoginCredentials {
 export interface UpdateUserData {
   firstName?: string;
   lastName?: string;
-  email?: string;
-  password?: string;
+  role?: string;
 }
 
 export interface AuthResponse {
@@ -28,4 +27,9 @@ export interface ApiResponse<T> {
   data: T;
   message: string;
   status: number;
+} 
+
+export interface RoleOption {
+  value: string;
+  label: string;
 } 

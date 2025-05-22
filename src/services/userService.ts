@@ -1,32 +1,48 @@
-import axios from "axios"
-import type { LoginCredentials } from "../types/user";
+import axios from "axios";
+import type { LoginCredentials, UpdateUserData } from "../types/user";
 
 
-// const api = axios.create({
-//     baseURL: import.meta.env.VITE_API_URL,
-//   });
+  const baseURL = import.meta.env.VITE_API_URL;
+
+
 
 
 export const userService = {
 
-  async getUsers(){
-    const token = sessionStorage.getItem('access_token')
-      const res = await fetch("https://8e19-2401-4900-1c7e-ad2-5504-7bb7-3b95-bf19.ngrok-free.app/api/user/USER01",
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      console.log(res)
-    },
 
- async login(credentials:LoginCredentials){
-    const res = await axios.post("https://90ca-2401-4900-1c7e-ad2-5504-7bb7-3b95-bf19.ngrok-free.app/api/login",credentials)
-    return res
-}
+  async login(credentials: LoginCredentials) {
+    const res = await axios.post(`${baseURL}/login`, credentials);
+    return res;
+  },
+  async getRoleOptions() {
+    const res:any = await axios.get(`${baseURL}/roles`);
+    return res.data.data;
+  },
+  async getUsers() {
+    const token = sessionStorage.getItem("access_token");
+    const res = await axios.get(`${baseURL}/users`, {
+      headers: {
+        "Content-Type": "application/json", 
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.data;
+    console.log(data);
+    return data;
+  },
+
+  async updateUser(id: string, updatedata: UpdateUserData) {
+    const token = sessionStorage.getItem("access_token");
+    const res = await axios.put(`${baseURL}/users/${id}`,updatedata, {
+      headers: {
+        "Content-Type": "application/json", 
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.data
+    console.log(data);
+    return data;
+  },
 
 
-    
-}
+};

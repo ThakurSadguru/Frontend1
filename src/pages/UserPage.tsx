@@ -1,27 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Edit, X, Shield } from 'lucide-react';
+import { Edit, Shield } from 'lucide-react';
 import { type User } from '../types/auth';
-
 import { useAuth } from '../contexts/AuthContext';
 import { userService } from '../services/userService';
+import type { RoleOption } from '../types/user';
+import { useNavigate } from 'react-router-dom';
 
 
-
-const roleOptions = [
-  { value: "", label: "All Roles" },
-  { value: "USER", label: "User" },
-  { value: "ADMIN", label: "Admin" },
-  { value: "CO_ADMIN", label: "Co Admin" },
-  { value: "SUPERVISOR", label: "Supervisor" },
-  { value: "DESIGNER", label: "Designer" },
-];
-
-interface EditUserModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  user: User | null;
-  onSave: (updatedUser: User) => void;
-}
 
 
 export default function UserPage() {
@@ -31,6 +16,7 @@ export default function UserPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -41,8 +27,51 @@ export default function UserPage() {
   });
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'ADMIN';
+  const navigate = useNavigate();
+
+useEffect(()=>{
+  if(!isAdmin){
+    navigate('/');
+  }
+},[isAdmin])
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+  
+      const res :any = await userService.getUsers();
+
+      setAllUsers(res.data);
+      setUsers(res.data);
+  
+      // Apply existing filters
+      if (filters.firstName || filters.lastName || filters.email || filters.role) {
+        applyFilters();
+      }
+    } catch (err) {
+      setError('Failed to fetch users. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const fetchRoleOptions = async () => {
+    const res :any = await userService.getRoleOptions();
+    
+   setRoleOptions(res.map((item:any) => ({value: item, label: item})));
+  }
+
+  if(isAdmin){
+    useEffect(() => {
+      fetchUsers();
+      fetchRoleOptions();
+    }, []);
+  }
+ 
 
   const handleEditUser = (userId: string) => {
+    console.log(userId);
     const user = users.find(u => u._id === userId);
     if (user) {
       setSelectedUser(user);
@@ -50,22 +79,7 @@ export default function UserPage() {
     }
   };
 
-  const handleSaveUser = async (updatedUser: User) => {
-    try {
-      // Here you would typically make an API call to update the user
-      // For now, we'll just update the local state
-      const updatedUsers = users.map(u => 
-        u._id === updatedUser._id ? updatedUser : u
-      );
-      setUsers(updatedUsers);
-      setAllUsers(updatedUsers);
-      setIsEditModalOpen(false);
-      setSelectedUser(null);
-    } catch (err) {
-      setError('Failed to update user. Please try again.');
-      console.error('Error updating user:', err);
-    }
-  };
+ 
 
   const handleFilterChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -114,36 +128,6 @@ export default function UserPage() {
     setCurrentPage(1);
   };
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-  
-      // Mocking the response for frontend development
-      
-      console.log("this function is called")
-     await userService.getUsers();
-  
-    //   // Store all users directly from the mock response (already an array)
-    //   setAllUsers(mockResponse);
-    //   setUsers(mockResponse);
-  
-      // Apply existing filters
-      if (filters.firstName || filters.lastName || filters.email || filters.role) {
-        applyFilters();
-      }
-    } catch (err) {
-      setError('Failed to fetch users. Please try again.');
-      console.error('Error fetching users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
 
   // Handle pagination
   const getCurrentPageUsers = () => {
@@ -152,13 +136,6 @@ export default function UserPage() {
     return users.slice(startIndex, endIndex);
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) {
-      return;
-    }
-
-   
-  };
 
   const handleRoleFilter = (role: string) => {
     setFilters({ ...filters, role });
@@ -387,16 +364,7 @@ export default function UserPage() {
         </div>
       )}
 
-      {/* Add the EditUserModal */}
-      {/* <EditUserModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedUser(null);
-        }}
-        user={selectedUser}
-        onSave={handleSaveUser}
-      /> */}
+   
     </div>
   );
 }
