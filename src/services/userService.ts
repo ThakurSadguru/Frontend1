@@ -1,30 +1,41 @@
 import axios from "axios"
-import type { LoginCredentials } from "../types/user";
+import type { InvitationRedeem, LoginCredentials } from "../types/user";
+import { getAuthHeaders } from "../utils/AuthUtils";
 
 
-// const api = axios.create({
-//     baseURL: import.meta.env.VITE_API_URL,
-//   });
-
+const baseUrl = import.meta.env.VITE_API_URL;
 
 export const userService = {
 
-  async getUsers(){
-    const token = sessionStorage.getItem('access_token')
-      const res = await fetch("https://8e19-2401-4900-1c7e-ad2-5504-7bb7-3b95-bf19.ngrok-free.app/api/user/USER01",
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      console.log(res)
-    },
-
  async login(credentials:LoginCredentials){
-    const res = await axios.post("https://90ca-2401-4900-1c7e-ad2-5504-7bb7-3b95-bf19.ngrok-free.app/api/login",credentials)
-    return res
+    const res:any = await axios.post(`${baseUrl}/api/login`,credentials)
+    return res.data.data;
+},
+async logout(){
+  const token = sessionStorage.getItem('access_token');
+  const res:any = await axios.post(`${baseUrl}/api/logout`,{},{
+    headers: getAuthHeaders(token)
+  })
+  console.log(token);
+  console.log(res.data)
+  if(res.data.success){
+    return res.data;
+  }
+  
+},
+async redeemInvitation(credentials: InvitationRedeem) {
+  const token = sessionStorage.getItem('access_token'); // or however you store it
+  const res: any = await axios.post(
+    `${baseUrl}/api/InvitationRedeem`,
+    credentials,
+    {
+      headers: getAuthHeaders(token),
+    }
+  );
+
+  if (res.data.success) {
+    return res.data;
+  }
 }
 
 

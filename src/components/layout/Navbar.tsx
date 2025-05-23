@@ -30,9 +30,9 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {
           </Link>
         </div>
 
-        {/* <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4">
           <ProfileDropdown user={user} />
-        </div> */}
+        </div>
       </div>
     </header>
   );

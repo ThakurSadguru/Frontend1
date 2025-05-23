@@ -4,7 +4,6 @@ import { Eye, EyeOff } from "lucide-react"
 import type { LoginCredentials } from "../types/user";
 import  {userService}  from "../services/userService";
 import { useAuth } from '../contexts/AuthContext';
-
 export function LoginPage() {
  
   const {setUser,setToken,setIsAuthenticated } = useAuth();
@@ -36,9 +35,9 @@ export function LoginPage() {
     try {
 // write the login logic
   const res:any= await userService.login(credentials)
-      if(res.data.data.access_token){
-        setUser(res.data.data.user);
-      sessionStorage.setItem("access_token",res.data.data.access_token)
+      if(res.access_token){
+        setUser(res.user);
+      sessionStorage.setItem("access_token",res.access_token)
       setIsAuthenticated(true)
       navigate('/dashboard')
       }

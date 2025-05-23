@@ -7,6 +7,12 @@ export interface User {
   isAdmin?: boolean;
 }
 
+export interface InvitationRedeem{
+  firstName: string,
+  lastName: string,
+  password: string,
+  token: string,
+}
 export interface LoginCredentials {
   email: string;
   password: string;

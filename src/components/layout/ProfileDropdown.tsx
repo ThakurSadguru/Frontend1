@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserIcon, ChevronDown, LogOut, Lock } from "lucide-react";
+import { userService } from "../../services/userService";
+import { useAuth } from "../../contexts/AuthContext";
 // import { useAuth } from "../../contexts/AuthContext";
 
 interface User {
@@ -9,19 +11,23 @@ interface User {
 }
 
 interface ProfileDropdownProps {
-  user: User;
+  user: User | any;
 }
 
 const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ user }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
-  // const { logout } = useAuth();
+  const {setIsAuthenticated} = useAuth();
 
   const handleLogout = async () => {
     try {
-      // await logout();
+      const res:any = await userService.logout();
+      if(res.success){
+        sessionStorage.removeItem("access_token")
+        setIsAuthenticated(false);
       navigate("/login");
+      }
     } catch (error) {
       console.error("Logout error:", error);
     }
