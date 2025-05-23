@@ -14,11 +14,11 @@ export const userService = {
     const res: any = await axios.get(`${baseURL}/roles`);
     return res.data;
   },
-  
+
   async getUsers() {
     const token = sessionStorage.getItem("access_token");
     const res = await axios.get(`${baseURL}/users`, {
-      headers:getAuthHeaders(token)
+      headers: getAuthHeaders(token),
     });
     const data = await res.data;
     return data;
@@ -27,20 +27,25 @@ export const userService = {
   async updateUser(id: string, updatedata: UpdateUserData) {
     const token = sessionStorage.getItem("access_token");
     const response = await axios.put(`${baseURL}/user/${id}`, updatedata, {
-      headers:getAuthHeaders(token)
+      headers: getAuthHeaders(token),
     });
 
     const data = response.data;
     return data;
   },
 
-  async deleteUser(id: string) {
+  async updateUserStatus(id: string, isActive: boolean) {
     const token = sessionStorage.getItem("access_token");
-    const response = await axios.delete(`${baseURL}/user/${id}`, {
-      headers:getAuthHeaders(token)
-    });
+    const payload = { status: isActive };
 
-    const data = response.data;
-    return data;
+    const response = await axios.put(
+      `${baseURL}/user/updatestatus/${id}`,
+      payload,
+      {
+        headers: getAuthHeaders(token),
+      }
+    );
+
+    return response.data;
   },
 };
