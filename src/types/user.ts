@@ -4,7 +4,9 @@ export interface User {
   lastName: string;
   email: string;
   role: string;
+  token: string;
   isAdmin?: boolean;
+  isActive?: boolean; 
 }
 
 export interface InvitationRedeem{
@@ -21,8 +23,7 @@ export interface LoginCredentials {
 export interface UpdateUserData {
   firstName?: string;
   lastName?: string;
-  email?: string;
-  password?: string;
+  role?: string;
 }
 
 export interface AuthResponse {
@@ -34,4 +35,9 @@ export interface ApiResponse<T> {
   data: T;
   message: string;
   status: number;
+} 
+
+export interface RoleOption {
+  value: string;
+  label: string;
 } 

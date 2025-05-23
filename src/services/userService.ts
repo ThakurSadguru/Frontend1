@@ -1,43 +1,51 @@
-import axios from "axios"
-import type { InvitationRedeem, LoginCredentials } from "../types/user";
+import axios from "axios";
+import type { LoginCredentials, UpdateUserData } from "../types/user";
 import { getAuthHeaders } from "../utils/AuthUtils";
 
-
-const baseUrl = import.meta.env.VITE_API_URL;
+const baseURL = import.meta.env.VITE_API_URL;
 
 export const userService = {
+  async login(credentials: LoginCredentials) {
+    const res = await axios.post(`${baseURL}/login`, credentials);
+    return res;
+  },
 
- async login(credentials:LoginCredentials){
-    const res:any = await axios.post(`${baseUrl}/api/login`,credentials)
-    return res.data.data;
-},
-async logout(){
-  const token = sessionStorage.getItem('access_token');
-  const res:any = await axios.post(`${baseUrl}/api/logout`,{},{
-    headers: getAuthHeaders(token)
-  })
-  console.log(token);
-  console.log(res.data)
-  if(res.data.success){
+  async getRoleOptions() {
+    const res: any = await axios.get(`${baseURL}/roles`);
     return res.data;
-  }
-  
-},
-async redeemInvitation(credentials: InvitationRedeem) {
-  const token = sessionStorage.getItem('access_token'); // or however you store it
-  const res: any = await axios.post(
-    `${baseUrl}/api/InvitationRedeem`,
-    credentials,
-    {
+  },
+
+  async getUsers() {
+    const token = sessionStorage.getItem("access_token");
+    const res = await axios.get(`${baseURL}/users`, {
       headers: getAuthHeaders(token),
-    }
-  );
+    });
+    const data = await res.data;
+    return data;
+  },
 
-  if (res.data.success) {
-    return res.data;
-  }
-}
+  async updateUser(id: string, updatedata: UpdateUserData) {
+    const token = sessionStorage.getItem("access_token");
+    const response = await axios.put(`${baseURL}/user/${id}`, updatedata, {
+      headers: getAuthHeaders(token),
+    });
 
+    const data = response.data;
+    return data;
+  },
 
-    
-}
+  async updateUserStatus(id: string, isActive: boolean) {
+    const token = sessionStorage.getItem("access_token");
+    const payload = { status: isActive };
+
+    const response = await axios.put(
+      `${baseURL}/user/updatestatus/${id}`,
+      payload,
+      {
+        headers: getAuthHeaders(token),
+      }
+    );
+
+    return response.data;
+  },
+};

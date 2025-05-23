@@ -1,28 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Edit, X, Shield } from 'lucide-react';
-import { type User } from '../types/auth';
-
-import { useAuth } from '../contexts/AuthContext';
-import { userService } from '../services/userService';
-
-
-
-const roleOptions = [
-  { value: "", label: "All Roles" },
-  { value: "USER", label: "User" },
-  { value: "ADMIN", label: "Admin" },
-  { value: "CO_ADMIN", label: "Co Admin" },
-  { value: "SUPERVISOR", label: "Supervisor" },
-  { value: "DESIGNER", label: "Designer" },
-];
-
-interface EditUserModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  user: User | null;
-  onSave: (updatedUser: User) => void;
-}
-
+import React, { useEffect, useState } from "react";
+import { Edit, Shield, UserIcon, ToggleRight, ToggleLeft } from "lucide-react";
+import { type User } from "../types/auth";
+import { useAuth } from "../contexts/AuthContext";
+import { userService } from "../services/userService";
+import type { RoleOption } from "../types/user";
+import { useNavigate } from "react-router-dom";
+import { ModalLayout } from "../modal/ModalLayout";
+import UpdateUserForm from "../components/UpdateUser";
+import UpdateUserStatus from "../components/UserActiveStatus";
 
 export default function UserPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -31,40 +16,104 @@ export default function UserPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+
   const [filters, setFilters] = useState({
     firstName: "",
     lastName: "",
     email: "",
     role: "",
   });
+
   const { user: currentUser } = useAuth();
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdmin = currentUser?.role === "ADMIN";
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchUsers();
+      fetchRoleOptions();
+    } else {
+      navigate("/");
+    }
+  }, [isAdmin]);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const res: any = await userService.getUsers();
+
+      setAllUsers(res.data);
+      setUsers(res.data);
+
+      // Apply existing filters
+      if (
+        filters.firstName ||
+        filters.lastName ||
+        filters.email ||
+        filters.role
+      ) {
+        applyFilters();
+      }
+    } catch (err) {
+      setError("Failed to fetch users. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRoleOptions = async () => {
+    const res: any = await userService.getRoleOptions();
+
+    setRoleOptions(res.data.map((item: any) => ({ value: item, label: item })));
+  };
 
   const handleEditUser = (userId: string) => {
-    const user = users.find(u => u._id === userId);
+    console.log(userId);
+    const user = users.find((u) => u._id === userId);
     if (user) {
       setSelectedUser(user);
       setIsEditModalOpen(true);
     }
   };
 
-  const handleSaveUser = async (updatedUser: User) => {
-    try {
-      // Here you would typically make an API call to update the user
-      // For now, we'll just update the local state
-      const updatedUsers = users.map(u => 
-        u._id === updatedUser._id ? updatedUser : u
-      );
-      setUsers(updatedUsers);
-      setAllUsers(updatedUsers);
+  const handleUpdateSuccess = () => {
+    // Refresh the users list to show updated data
+    fetchUsers();
+
+    // Close modal after successful update with a short delay
+    setTimeout(() => {
       setIsEditModalOpen(false);
-      setSelectedUser(null);
-    } catch (err) {
-      setError('Failed to update user. Please try again.');
-      console.error('Error updating user:', err);
+    }, 1500);
+  };
+
+  const handleUpdateStatus = (userId: string) => {
+    console.log(`Preparing to update status for user: ${userId}`);
+    const user = users.find((u) => u._id === userId);
+    if (user) {
+      console.log("Found user for status update:", user);
+      console.log("Current isActive status:", user.isActive);
+      setSelectedUser(user);
+      setIsStatusModalOpen(true);
+    } else {
+      console.error("User not found for ID:", userId);
     }
+  };
+
+  const handleStatusUpdateSuccess = () => {
+    // Refresh the users list to show updated data
+    fetchUsers();
+
+    // Close modal immediately after successful status update
+    setIsStatusModalOpen(false);
+
+    // Show a temporary success message (you could add state for this if desired)
+    console.log("User status updated successfully");
   };
 
   const handleFilterChange = (
@@ -72,9 +121,9 @@ export default function UserPage() {
   ) => {
     const { name, value } = e.target;
     setFilters({ ...filters, [name]: value });
-    
+
     // If role filter changes, apply it immediately
-    if (name === 'role') {
+    if (name === "role") {
       applyFilters({ ...filters, role: value });
     }
   };
@@ -83,81 +132,46 @@ export default function UserPage() {
   const applyFilters = (currentFilters = filters) => {
     // Apply filters to allUsers
     let filteredUsers = [...allUsers];
-    
+
     if (currentFilters.firstName) {
-      filteredUsers = filteredUsers.filter(u => 
-        u.firstName.toLowerCase().includes(currentFilters.firstName.toLowerCase())
+      filteredUsers = filteredUsers.filter((u) =>
+        u.firstName
+          .toLowerCase()
+          .includes(currentFilters.firstName.toLowerCase())
       );
     }
-    
+
     if (currentFilters.lastName) {
-      filteredUsers = filteredUsers.filter(u => 
+      filteredUsers = filteredUsers.filter((u) =>
         u.lastName.toLowerCase().includes(currentFilters.lastName.toLowerCase())
       );
     }
-    
+
     if (currentFilters.email) {
-      filteredUsers = filteredUsers.filter(u => 
+      filteredUsers = filteredUsers.filter((u) =>
         u.email.toLowerCase().includes(currentFilters.email.toLowerCase())
       );
     }
-    
+
     if (currentFilters.role) {
-      filteredUsers = filteredUsers.filter(u => u.role === currentFilters.role);
+      filteredUsers = filteredUsers.filter(
+        (u) => u.role === currentFilters.role
+      );
     }
-    
+
     setUsers(filteredUsers);
-    
+
     // Handle pagination
     const itemsPerPage = 10;
     setTotalPages(Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage)));
     setCurrentPage(1);
   };
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-  
-      // Mocking the response for frontend development
-      
-      console.log("this function is called")
-     await userService.getUsers();
-  
-    //   // Store all users directly from the mock response (already an array)
-    //   setAllUsers(mockResponse);
-    //   setUsers(mockResponse);
-  
-      // Apply existing filters
-      if (filters.firstName || filters.lastName || filters.email || filters.role) {
-        applyFilters();
-      }
-    } catch (err) {
-      setError('Failed to fetch users. Please try again.');
-      console.error('Error fetching users:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   // Handle pagination
   const getCurrentPageUsers = () => {
     const startIndex = (currentPage - 1) * 10;
     const endIndex = startIndex + 10;
     return users.slice(startIndex, endIndex);
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) {
-      return;
-    }
-
-   
   };
 
   const handleRoleFilter = (role: string) => {
@@ -179,7 +193,9 @@ export default function UserPage() {
         {!isAdmin && (
           <div className="flex items-center gap-2 text-yellow-600 bg-yellow-50 px-4 py-2 rounded-lg">
             <Shield className="w-5 h-5" />
-            <span className="text-sm font-medium">Admin access required for user management actions</span>
+            <span className="text-sm font-medium">
+              Admin access required for user management actions
+            </span>
           </div>
         )}
       </header>
@@ -224,7 +240,7 @@ export default function UserPage() {
             onChange={handleFilterChange}
             className="p-3 rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {roleOptions.map(option => (
+            {roleOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -241,16 +257,18 @@ export default function UserPage() {
 
       {/* Role Filter Buttons */}
       <div className="bg-white p-4 rounded-lg shadow mb-8">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Quick Filter by Role:</h3>
+        <h3 className="text-sm font-medium text-gray-700 mb-3">
+          Quick Filter by Role:
+        </h3>
         <div className="flex flex-wrap gap-2">
-          {roleOptions.map(option => (
+          {roleOptions.map((option) => (
             <button
               key={option.value}
               onClick={() => handleRoleFilter(option.value)}
               className={`px-3 py-1.5 text-xs font-medium rounded-full transition ${
                 filters.role === option.value
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-800 hover:bg-gray-200"
               }`}
             >
               {option.label}
@@ -295,7 +313,7 @@ export default function UserPage() {
                 <tbody className="divide-y divide-gray-200">
                   {getCurrentPageUsers().length === 0 ? (
                     <tr>
-                      <td 
+                      <td
                         colSpan={6}
                         className="px-6 py-8 text-center text-gray-500"
                       >
@@ -304,43 +322,74 @@ export default function UserPage() {
                     </tr>
                   ) : (
                     getCurrentPageUsers().map((u) => (
-                      <tr
-                        key={u._id}
-                        className="hover:bg-gray-50 transition"
-                      >
+                      <tr key={u._id} className="hover:bg-gray-50 transition">
                         <td className="px-6 py-4 text-gray-500">{u._id}</td>
-                        <td className="px-6 py-4 text-gray-800">{u.firstName}</td>
-                        <td className="px-6 py-4 text-gray-800">{u.lastName}</td>
+                        <td className="px-6 py-4 text-gray-800">
+                          {u.firstName}
+                        </td>
+                        <td className="px-6 py-4 text-gray-800">
+                          {u.lastName}
+                        </td>
                         <td className="px-6 py-4 text-gray-600">{u.email}</td>
                         <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            u.role === 'ADMIN'
-                              ? 'bg-purple-100 text-purple-800 border border-purple-400'
-                              : u.role === 'CO_ADMIN'
-                              ? 'bg-blue-100 text-blue-800 border border-blue-400'
-                              : u.role === 'SUPERVISOR'
-                              ? 'bg-yellow-100 text-yellow-800 border border-yellow-400'
-                              : u.role === 'DESIGNER'
-                              ? 'bg-pink-100 text-pink-800 border border-pink-400'
-                              : 'bg-green-100 text-green-800 border border-green-400'
-                          }`}>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              u.role === "ADMIN"
+                                ? "bg-purple-100 text-purple-800 border border-purple-400"
+                                : u.role === "CO_ADMIN"
+                                ? "bg-blue-100 text-blue-800 border border-blue-400"
+                                : u.role === "SUPERVISOR"
+                                ? "bg-yellow-100 text-yellow-800 border border-yellow-400"
+                                : u.role === "DESIGNER"
+                                ? "bg-pink-100 text-pink-800 border border-pink-400"
+                                : "bg-green-100 text-green-800 border border-green-400"
+                            }`}
+                          >
                             {u.role}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {isAdmin ? (
-                            <button
-                              onClick={() => handleEditUser(u._id)}
-                              className="text-blue-600 hover:text-blue-900 inline-flex items-center"
-                              title="Edit user"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                          ) : (
-                            <span className="text-gray-400 cursor-not-allowed" title="Admin access required">
-                              <Edit className="h-4 w-4" />
-                            </span>
-                          )}
+                          <div className="flex justify-end space-x-2">
+                            {isAdmin ? (
+                              <>
+                                <button
+                                  onClick={() => handleEditUser(u._id)}
+                                  className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                                  title="Edit user"
+                                >
+                                  <Edit className="h-6 w-6" />
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateStatus(u._id)}
+                                  className={`${
+                                    u.isActive !== false
+                                      ? "text-green-600 hover:text-green-800"
+                                      : "text-red-600 hover:text-red-800"
+                                  } inline-flex items-center`}
+                                  title="Toggle user status"
+                                >
+                                  {u.isActive !== false ? (
+                                    <>
+                                      <ToggleRight className="h-6 w-6" />
+                                      <span className="sr-only">Active</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ToggleLeft className="h-6 w-6" />
+                                      <span className="sr-only">Inactive</span>
+                                    </>
+                                  )}
+                                </button>
+                              </>
+                            ) : (
+                              <span
+                                className="text-gray-400 cursor-not-allowed"
+                                title="Admin access required"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -387,16 +436,39 @@ export default function UserPage() {
         </div>
       )}
 
-      {/* Add the EditUserModal */}
-      {/* <EditUserModal
+      {/* Edit User Modal */}
+      <ModalLayout
         isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedUser(null);
-        }}
-        user={selectedUser}
-        onSave={handleSaveUser}
-      /> */}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit User"
+        icon={<UserIcon className="h-5 w-5 text-blue-600" />}
+      >
+        {selectedUser && (
+          <UpdateUserForm
+            user={selectedUser}
+            roleOptions={roleOptions}
+            onSuccess={handleUpdateSuccess}
+            onCancel={() => setIsEditModalOpen(false)}
+          />
+        )}
+      </ModalLayout>
+
+      {/* Update User Status Modal */}
+      <ModalLayout
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        title="Update User Status"
+        icon={<UserIcon className="h-5 w-5 text-blue-600" />}
+        maxWidth="max-w-lg"
+      >
+        {selectedUser && (
+          <UpdateUserStatus
+            user={selectedUser}
+            onSuccess={handleStatusUpdateSuccess}
+            onCancel={() => setIsStatusModalOpen(false)}
+          />
+        )}
+      </ModalLayout>
     </div>
   );
 }

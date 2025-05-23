@@ -5,6 +5,7 @@ export interface User {
   lastName: string;
   role: string;
   token: string;
+  isActive?: boolean; // Optional since some existing data might not have this field
   // Add any other user properties from your backend
 }
 export interface AuthContextType {

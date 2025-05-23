@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import {  Link, useNavigate } from "react-router-dom";
+import {  Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react"
 import type { LoginCredentials } from "../types/user";
 import  {userService}  from "../services/userService";
@@ -8,7 +8,6 @@ export function LoginPage() {
  
   const {setUser,setToken,setIsAuthenticated } = useAuth();
 
-  const navigate = useNavigate();
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: "",
     password: "",
@@ -39,7 +38,7 @@ export function LoginPage() {
         setUser(res.user);
       sessionStorage.setItem("access_token",res.access_token)
       setIsAuthenticated(true)
-      navigate('/dashboard')
+      setToken(res.data.data.access_token)
       }
       
     } catch (err) {

@@ -22,7 +22,7 @@ export const ModalLayout: React.FC<ModalLayoutProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center px-4 overflow-y-auto mt-16"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className={`bg-white shadow-xl rounded-lg w-full ${maxWidth} relative animate-scale-in my-auto`}>
