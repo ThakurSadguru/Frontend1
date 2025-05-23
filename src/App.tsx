@@ -6,6 +6,8 @@ import { LoginPage } from './pages/loginPage';
 import { AuthLayout } from './layout/AuthLayout';
 import Dashboard from './pages/Dashboard';
 import UserPage from './pages/UserPage';
+import { ClientsPage } from './pages/ClientsPage';
+import { ClientDetailsPage } from './components/clients/ClientDetailsPage';
 
 function App() {
   return (<>
@@ -14,12 +16,13 @@ function App() {
         <Routes>
           <Route element={<AnonymousLayout />}>
             <Route path="/login" element={<LoginPage />} />
-            
             <Route path="/" element={<Navigate to="/login" replace />} />
           </Route>
           <Route element={<AuthLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/users" element={<UserPage/>} />
+          <Route path="/clients" element={<ClientsPage/>} />
+          <Route path="/clients/:clientId" element={<ClientDetailsPage />} />
           </Route>
         </Routes>
       </Router>
