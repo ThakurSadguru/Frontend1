@@ -93,6 +93,8 @@ const UpdateUserForm: React.FC<UpdateUserFormProps> = ({
             type="email"
             name="email"
             value={updateForm.email}
+            
+            disabled
             onChange={handleUpdateFormChange}
             className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required

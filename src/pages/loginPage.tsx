@@ -40,6 +40,7 @@ export function LoginPage() {
         setUser(res.data.data.user);
       sessionStorage.setItem("access_token",res.data.data.access_token)
       setIsAuthenticated(true)
+      setToken(res.data.data.access_token)
       navigate('/dashboard')
       }
       

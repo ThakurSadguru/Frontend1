@@ -35,7 +35,10 @@ export default function UserPage() {
   const navigate = useNavigate();
 
 useEffect(()=>{
-  if(!isAdmin){
+  if(isAdmin){
+    fetchUsers();
+    fetchRoleOptions();
+  }else{
     navigate('/');
   }
 },[isAdmin])
@@ -64,14 +67,7 @@ useEffect(()=>{
   const fetchRoleOptions = async () => {
     const res :any = await userService.getRoleOptions();
     
-   setRoleOptions(res.map((item:any) => ({value: item, label: item})));
-  }
-
-  if(isAdmin){
-    useEffect(() => {
-      fetchUsers();
-      fetchRoleOptions();
-    }, []);
+   setRoleOptions(res.data.map((item:any) => ({value: item, label: item})));
   }
  
 
