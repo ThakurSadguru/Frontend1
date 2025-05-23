@@ -13,8 +13,6 @@ export function CreateClientPage({ onSuccess }: CreateClientPageProps) {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  
-  // Add a ref to track submission status across re-renders and prevent StrictMode double-calls
   const submissionInProgress = useRef(false);
   
   const [formData, setFormData] = useState({

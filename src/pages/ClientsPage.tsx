@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Building } from 'lucide-react';
+import { Building, Trash2, Loader2 } from 'lucide-react';
 import { CreateClientPage } from '../components/clients/CreateClientPage';
-import { getClients } from '../services/clientservice';
+import { EditClientPage } from '../components/clients/EditClientPage';
+import { getClients, deleteClient } from '../services/clientservice';
 import type { Client } from '../types/client';
 import { ModalLayout } from '../modal/ModalLayout';
-
+import { EditButton } from '../components/EditButton';
+import { useNavigate } from 'react-router-dom';
 
 export function ClientsPage() {
   const [showCreateClientModal, setShowCreateClientModal] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const navigate = useNavigate();
 
   const fetchClients = async () => {
     try {
@@ -41,6 +46,36 @@ export function ClientsPage() {
     // Add the new client to the beginning of the list
     setClients(prevClients => [newClient, ...prevClients]);
     setShowCreateClientModal(false);
+  };
+
+  const handleEditClient = (updatedClient: Client) => {
+    setClients(prevClients => 
+      prevClients.map(client => 
+        client._id === updatedClient._id ? updatedClient : client
+      )
+    );
+    setSelectedClientId(null);
+  };
+
+  const handleDeleteClick = (clientId: string) => {
+    setShowDeleteConfirm(clientId);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!showDeleteConfirm) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteClient(showDeleteConfirm);
+      setClients(prevClients => 
+        prevClients.filter(client => client._id !== showDeleteConfirm)
+      );
+    } catch (err) {
+      console.error('Error deleting client:', err);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(null);
+    }
   };
 
   if (loading) {
@@ -86,6 +121,7 @@ export function ClientsPage() {
               <th className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900">Email</th>
               <th className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900">Contact</th>
               <th className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900">Created</th>
+              <th className="py-3.5 px-4 text-left text-sm font-semibold text-gray-900">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
@@ -95,12 +131,12 @@ export function ClientsPage() {
                 className="hover:bg-gray-50 transition-colors"
               >
                 <td className="px-4 py-4 text-sm">
-                  <Link 
-                    to={`/clients/${client._id || ''}`} 
-                    className="font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                  <button
+                    onClick={() => navigate(`/clients/${client._id}`)}
+                    className="font-medium text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
                   >
                     {client.clientName}
-                  </Link>
+                  </button>
                 </td>
                 <td className="px-4 py-4 text-sm text-gray-600">
                   {client.hqCountry || 'N/A'}
@@ -118,6 +154,21 @@ export function ClientsPage() {
                 </td>
                 <td className="px-4 py-4 text-sm text-gray-500">
                   {client.createdAt ? new Date(client.createdAt).toLocaleDateString() : 'N/A'}
+                </td>
+                <td className="px-4 py-4 text-sm">
+                  <div className="flex items-center space-x-2">
+                    <EditButton 
+                      onClick={() => setSelectedClientId(client._id || '')} 
+                      className="!py-1 !px-2"
+                    />
+                    <button
+                      onClick={() => handleDeleteClick(client._id || '')}
+                      className="inline-flex items-center p-1.5 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
+                      title="Delete client"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -144,15 +195,74 @@ export function ClientsPage() {
 
       {/* Create Client Modal */}
       {showCreateClientModal && (
-    <ModalLayout
-      isOpen={true}
-      onClose={() => setShowCreateClientModal(false)}
-      title="Create Client"
-      icon={<Building className="w-6 h-6 text-blue-600" />}
-    >
-      <CreateClientPage onSuccess={handleAddNewClient} />
-    </ModalLayout>
-  )}
+        <ModalLayout
+          isOpen={true}
+          onClose={() => setShowCreateClientModal(false)}
+          title="Create Client"
+          icon={<Building className="w-6 h-6 text-blue-600" />}
+        >
+          <CreateClientPage onSuccess={handleAddNewClient} />
+        </ModalLayout>
+      )}
+
+      {/* Edit Client Modal */}
+      {selectedClientId && (
+        <ModalLayout
+          isOpen={true}
+          onClose={() => setSelectedClientId(null)}
+          title="Edit Client"
+          icon={<Building className="w-6 h-6 text-blue-600" />}
+          maxWidth="max-w-4xl"
+        >
+          <EditClientPage 
+            clientId={selectedClientId}
+            onSuccess={handleEditClient}
+            onCancel={() => setSelectedClientId(null)}
+          />
+        </ModalLayout>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <ModalLayout
+          isOpen={true}
+          onClose={() => setShowDeleteConfirm(null)}
+          title="Delete Client"
+          icon={<Trash2 className="w-6 h-6 text-red-600" />}
+        >
+          <div className="p-6">
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this client? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </ModalLayout>
+      )}
     </div>
   );
 }

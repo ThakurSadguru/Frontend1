@@ -56,14 +56,8 @@ export async function updateClient(id: string, clientData: Partial<Client>) {
   }
 }
 
-export async function deleteClient(id: string) {
-  try {
-    const response = await axios.delete(`${API_URL}/client/${id}`, {
-      headers: getAuthHeaders(getToken())
-    });
-    return { data: response.data, error: null };
-  } catch (error) {
-    console.error(`Error deleting client with ID ${id}:`, error);
-    return { data: null, error };
-  }
-}
+export const deleteClient = async (clientId: string) => {
+  return await axios.delete(`${API_URL}/client/${clientId}`, {
+    headers: getAuthHeaders(getToken())
+  });
+};
